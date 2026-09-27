@@ -1,4 +1,4 @@
-// Command strftime-lite 按格式串打印时间。
+// Command strftime-lite 按格式串打印或解析时间。
 package main
 
 import (
@@ -17,11 +17,26 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	layout := flags.String("layout", "%Y-%m-%d %H:%M:%S", "格式串")
 	at := flags.Int64("at", 1770000000, "unix 秒（UTC）")
+	parse := flags.String("parse", "", "按格式串解析该时间串，输出 unix 秒")
 	if err := flags.Parse(args); err != nil {
 		return 2
 	}
+	if *parse != "" {
+		moment, err := strftimelite.Parse(*layout, *parse)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		fmt.Fprintln(stdout, moment.Unix())
+		return 0
+	}
 	moment := time.Unix(*at, 0).UTC()
-	fmt.Fprintln(stdout, strftimelite.Format(*layout, moment))
+	out, err := strftimelite.Format(*layout, moment)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintln(stdout, out)
 	return 0
 }
 
